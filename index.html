@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firmamento - Guía Nocturna e Mapa Estelar</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        space: {
+                            900: '#030712',
+                            800: '#0B1120',
+                            700: '#151E33',
+                            600: '#1E293B',
+                            accent: '#38BDF8',
+                            purple: '#A855F7',
+                            gold: '#F59E0B'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Cinzel', 'serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            background-color: #030712;
+            color: #F8FAFC;
+            overflow-x: hidden;
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0B1120;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1E293B;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #38BDF8;
+        }
+
+        /* Glow Effects */
+        .glow-cyan {
+            box-shadow: 0 0 25px -5px rgba(56, 189, 248, 0.3);
+        }
+        .text-glow {
+            text-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+        }
+        .text-glow-gold {
+            text-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+        }
+
+        /* Canvas Style */
+        #starCanvas {
+            cursor: grab;
+        }
+        #starCanvas:active {
+            cursor: grabbing;
+        }
+
+        /* Glassmorphism */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .glass-card {
+            background: rgba(30, 41, 59, 0.4);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+        .glass-card:hover {
+            border-color: rgba(56, 189, 248, 0.4);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-space-accent selection:text-space-900">
+
+    <!-- Header / Navbar -->
+    <header class="sticky top-0 z-50 glass-panel border-b border-slate-800/80 px-4 lg:px-8 py-3.5">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-space-purple to-space-accent flex items-center justify-center shadow-lg shadow-sky-500/20">
+                    <i class="fa-solid font-bold fa-sparkles text-white text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="font-serif font-bold text-xl tracking-wider text-white flex items-center gap-2">
+                        FIRMAMENTO <span class="text-xs font-sans px-2 py-0.5 rounded-full bg-space-accent/10 text-space-accent border border-space-accent/20">3D Interactive</span>
+                    </h1>
+                    <p class="text-xs text-slate-400 hidden sm:block">Explorador en tiempo real del cielo nocturno</p>
+                </div>
+            </div>
+
+            <!-- Nav Links / Actions -->
+            <nav class="flex items-center space-x-2 sm:space-x-6 text-sm">
+                <a href="#planetarium" class="text-slate-300 hover:text-space-accent transition-colors flex items-center gap-1.5 font-medium">
+                    <i class="fa-solid fa-compass text-space-accent"></i>
+                    <span class="hidden md:inline">Mapa Estelar</span>
+                </a>
+                <a href="#moon" class="text-slate-300 hover:text-space-accent transition-colors flex items-center gap-1.5 font-medium">
+                    <i class="fa-solid fa-moon text-yellow-300"></i>
+                    <span class="hidden md:inline">Luna Hoy</span>
+                </a>
+                <a href="#stars" class="text-slate-300 hover:text-space-accent transition-colors flex items-center gap-1.5 font-medium">
+                    <i class="fa-solid fa-star text-space-purple"></i>
+                    <span class="hidden md:inline">Estrellas Top</span>
+                </a>
+                <a href="#guides" class="text-slate-300 hover:text-space-accent transition-colors flex items-center gap-1.5 font-medium">
+                    <i class="fa-solid fa-binoculars text-emerald-400"></i>
+                    <span class="hidden md:inline">Observación</span>
+                </a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero / Planetarium Section -->
+    <main class="flex-grow">
+        <section id="planetarium" class="relative pt-6 pb-12 px-4 max-w-7xl mx-auto">
+            
+            <!-- Controls Bar -->
+            <div class="glass-panel rounded-2xl p-4 md:p-6 mb-6 grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+                
+                <!-- Time & Date Selectors -->
+                <div class="md:col-span-5 flex flex-wrap items-center gap-3">
+                    <div class="flex-1 min-w-[140px]">
+                        <label class="block text-xs text-slate-400 mb-1 flex items-center gap-1">
+                            <i class="fa-regular fa-calendar"></i> Fecha
+                        </label>
+                        <input type="date" id="dateInput" class="w-full bg-space-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-space-accent transition-colors">
+                    </div>
+                    <div class="flex-1 min-w-[120px]">
+                        <label class="block text-xs text-slate-400 mb-1 flex items-center gap-1">
+                            <i class="fa-regular fa-clock"></i> Hora
+                        </label>
+                        <input type="time" id="timeInput" class="w-full bg-space-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-space-accent transition-colors">
+                    </div>
+                    <button id="btnRealtime" class="mt-5 px-3 py-1.5 bg-space-700 hover:bg-space-600 border border-slate-600 text-xs font-medium rounded-lg text-slate-200 transition-colors flex items-center gap-1.5">
+                        <i class="fa-solid fa-rotate"></i> Ahora
+                    </button>
+                </div>
+
+                <!-- Hemispheres & Location -->
+                <div class="md:col-span-3 flex items-center gap-3">
+                    <div class="w-full">
+                        <label class="block text-xs text-slate-400 mb-1 flex items-center gap-1">
+                            <i class="fa-solid fa-earth-americas"></i> Hemisferio / Vista
+                        </label>
+                        <select id="hemisphereSelect" class="w-full bg-space-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-space-accent transition-colors">
+                            <option value="N">Hemisferio Norte (Lat: +40°)</option>
+                            <option value="S">Hemisferio Sur (Lat: -34°)</option>
+                            <option value="E">Ecuador Celeste (Lat: 0°)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Interactive Toggles -->
+                <div class="md:col-span-4 flex items-center justify-start md:justify-end gap-2 flex-wrap">
+                    <button id="toggleConstellations" class="px-3 py-1.5 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-all bg-space-accent/20 border-space-accent text-space-accent">
+                        <i class="fa-solid fa-draw-polygon"></i> Constelaciones
+                    </button>
+                    <button id="toggleNames" class="px-3 py-1.5 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-all bg-space-accent/20 border-space-accent text-space-accent">
+                        <i class="fa-solid fa-font"></i> Nombres
+                    </button>
+                    <button id="toggleAtmosphere" class="px-3 py-1.5 rounded-lg border border-slate-700 bg-space-800 text-slate-300 hover:border-slate-500 text-xs font-medium flex items-center gap-1.5 transition-all">
+                        <i class="fa-solid fa-cloud-moon"></i> Atmósfera
+                    </button>
+                </div>
+            </div>
+
+            <!-- Main Canvas Container -->
+            <div class="relative w-full rounded-2xl overflow-hidden glass-panel border border-slate-800/80 shadow-2xl aspect-[4/3] sm:aspect-[16/9] max-h-[700px] flex items-center justify-center">
+                
+                <!-- Canvas -->
+                <canvas id="starCanvas" class="w-full h-full block"></canvas>
+
+                <!-- Overlay Info Tag -->
+                <div class="absolute top-4 left-4 pointer-events-none bg-space-900/80 backdrop-blur-md px-3 py-2 rounded-xl border border-slate-800 text-xs flex flex-col gap-1">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span id="currentSkyTitle" class="font-semibold text-slate-200">Vista Nocturna Viva</span>
+                    </div>
+                    <span id="skyCoords" class="text-slate-400 font-mono text-[10px]">Rotación: 0° | Zoom: 1.0x</span>
+                </div>
+
+                <!-- Canvas Helper Controls -->
+                <div class="absolute bottom-4 right-4 flex items-center gap-2">
+                    <button id="btnZoomIn" class="w-9 h-9 rounded-xl glass-panel hover:bg-space-700 flex items-center justify-center text-slate-200 transition-colors shadow-lg" title="Acercar">
+                        <i class="fa-solid fa-plus text-xs"></i>
+                    </button>
+                    <button id="btnZoomOut" class="w-9 h-9 rounded-xl glass-panel hover:bg-space-700 flex items-center justify-center text-slate-200 transition-colors shadow-lg" title="Alejar">
+                        <i class="fa-solid fa-minus text-xs"></i>
+                    </button>
+                    <button id="btnResetView" class="w-9 h-9 rounded-xl glass-panel hover:bg-space-700 flex items-center justify-center text-slate-200 transition-colors shadow-lg" title="Centrar Vista">
+                        <i class="fa-solid fa-arrows-to-dot text-xs"></i>
+                    </button>
+                </div>
+
+                <!-- Interactive Star Tooltip -->
+                <div id="starTooltip" class="absolute hidden pointer-events-none bg-space-900/95 border border-space-accent/50 p-3 rounded-xl shadow-2xl z-20 text-xs w-48 transition-opacity duration-150">
+                    <h4 id="tooltipName" class="font-bold text-space-accent text-sm">Sirio</h4>
+                    <p id="tooltipConst" class="text-slate-400 italic mb-1">Canis Maior</p>
+                    <div class="space-y-0.5 text-[11px] text-slate-300">
+                        <div class="flex justify-between"><span>Magnitud:</span> <span id="tooltipMag" class="font-mono text-amber-300">-1.46</span></div>
+                        <div class="flex justify-between"><span>Distancia:</span> <span id="tooltipDist" class="font-mono text-slate-200">8.6 a.l.</span></div>
+                        <div class="flex justify-between"><span>Tipo:</span> <span id="tooltipType" class="font-mono text-slate-200">A1V (Blanca)</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <p class="text-center text-xs text-slate-500 mt-3">
+                <i class="fa-solid fa-hand-pointer text-space-accent mr-1"></i> Arrastra el ratón/dedo para rotar la bóveda celeste. Pasa sobre una estrella principal para ver detalles.
+            </p>
+        </section>
+
+        <!-- Moon Phase & Celestial Events Section -->
+        <section id="moon" class="py-10 px-4 max-w-7xl mx-auto">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                <!-- Moon Phase Card -->
+                <div class="glass-panel rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden">
+                    <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-serif font-semibold text-lg text-white flex items-center gap-2">
+                                <i class="fa-solid fa-moon text-amber-300"></i> Fase Lunar Actual
+                            </h3>
+                            <span id="moonAge" class="text-xs font-mono px-2.5 py-1 rounded-full bg-space-800 text-amber-300 border border-amber-500/20">Día 14.2</span>
+                        </div>
+                        
+                        <div class="flex items-center gap-6 my-4">
+                            <div class="relative w-24 h-24 rounded-full bg-space-900 border border-slate-700/60 flex items-center justify-center shadow-inner overflow-hidden">
+                                <!-- Dynamic Graphic Moon representation -->
+                                <div id="moonGraphic" class="w-20 h-20 rounded-full bg-gradient-to-r from-slate-200 to-amber-100 shadow-[inset_0_0_15px_rgba(0,0,0,0.8)] relative">
+                                    <div id="moonShadow" class="absolute top-0 bottom-0 right-0 bg-space-900/90 rounded-r-full transition-all duration-500" style="width: 15%;"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <h4 id="moonPhaseName" class="font-bold text-xl text-white">Luna Llena</h4>
+                                <p class="text-xs text-slate-400 mt-1">Iluminación: <span id="moonIllum" class="text-slate-200 font-mono font-semibold">98%</span></p>
+                                <p class="text-xs text-slate-400">Próx. Luna Nueva: <span id="nextNewMoon" class="text-slate-200 font-mono">14 días</span></p>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-xs text-slate-400 border-t border-slate-800/80 pt-3 mt-2">
+                        <i class="fa-solid fa-circle-info text-space-accent mr-1"></i> La Luna influye en la visibilidad estelar. Las noches de Luna Nueva son ideales para observar la Vía Láctea.
+                    </p>
+                </div>
+
+                <!-- Visible Planets Tonight -->
+                <div class="glass-panel rounded-2xl p-6 lg:col-span-2 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-serif font-semibold text-lg text-white flex items-center gap-2">
+                                <i class="fa-solid fa-planet-ringed text-space-accent"></i> Planetas Visibles esta Noche
+                            </h3>
+                            <span class="text-xs text-slate-400">Visibilidad a simple vista</span>
+                        </div>
+
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            <!-- Venus -->
+                            <div class="glass-card rounded-xl p-3 text-center border-l-2 border-l-amber-200">
+                                <div class="w-8 h-8 rounded-full bg-amber-200/20 text-amber-200 flex items-center justify-center mx-auto mb-2 text-sm font-bold">♀</div>
+                                <h4 class="font-semibold text-sm text-white">Venus</h4>
+                                <span class="text-[10px] text-emerald-400 block font-medium">Muy Brillante</span>
+                                <span class="text-[10px] text-slate-400 block mt-1">Oeste (Atardecer)</span>
+                            </div>
+                            <!-- Marte -->
+                            <div class="glass-card rounded-xl p-3 text-center border-l-2 border-l-red-400">
+                                <div class="w-8 h-8 rounded-full bg-red-400/20 text-red-400 flex items-center justify-center mx-auto mb-2 text-sm font-bold">♂</div>
+                                <h4 class="font-semibold text-sm text-white">Marte</h4>
+                                <span class="text-[10px] text-amber-400 block font-medium">Tono Rojizo</span>
+                                <span class="text-[10px] text-slate-400 block mt-1">Este (Sombra)</span>
+                            </div>
+                            <!-- Júpiter -->
+                            <div class="glass-card rounded-xl p-3 text-center border-l-2 border-l-amber-500">
+                                <div class="w-8 h-8 rounded-full bg-amber-500/20 text-amber-500 flex items-center justify-center mx-auto mb-2 text-sm font-bold">♃</div>
+                                <h4 class="font-semibold text-sm text-white">Júpiter</h4>
+                                <span class="text-[10px] text-emerald-400 block font-medium">Espectacular</span>
+                                <span class="text-[10px] text-slate-400 block mt-1">Alto en el Cielo</span>
+                            </div>
+                            <!-- Saturno -->
+                            <div class="glass-card rounded-xl p-3 text-center border-l-2 border-l-yellow-600">
+                                <div class="w-8 h-8 rounded-full bg-yellow-600/20 text-yellow-500 flex items-center justify-center mx-auto mb-2 text-sm font-bold">♄</div>
+                                <h4 class="font-semibold text-sm text-white">Saturno</h4>
+                                <span class="text-[10px] text-slate-300 block font-medium">Anillos Visibles</span>
+                                <span class="text-[10px] text-slate-400 block mt-1">Sur-Oeste</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+                        <span><i class="fa-solid fa-meteor text-space-purple mr-1"></i> Lluvia de Meteoros activa: <strong>Perseidas / Gemínidas</strong></span>
+                        <span class="text-space-accent font-medium hover:underline cursor-pointer">Ver calendario &rarr;</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Top Brightest Stars Grid -->
+        <section id="stars" class="py-10 px-4 max-w-7xl mx-auto">
+            <div class="mb-8">
+                <h2 class="font-serif text-2xl md:text-3xl font-bold text-white mb-2">Las Joyas del Cielo Nocturno</h2>
+                <p class="text-slate-400 text-sm max-w-2xl">Conoce las estrellas más fulgurantes que puedes identificar a simple vista desde la Tierra cualquier noche despejada.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+                
+                <!-- Star Card 1: Sirio -->
+                <div class="glass-card rounded-2xl p-5 relative group overflow-hidden">
+                    <div class="absolute top-0 right-0 w-24 h-24 bg-sky-500/10 rounded-full blur-xl group-hover:bg-sky-500/20 transition-all"></div>
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <span class="text-[10px] font-mono tracking-widest uppercase text-space-accent font-semibold">Alfa Canis Majoris</span>
+                            <h3 class="font-serif text-xl font-bold text-white">Sirio</h3>
+                        </div>
+                        <span class="w-3 h-3 rounded-full bg-sky-200 shadow-[0_0_10px_#38bdf8]"></span>
+                    </div>
+                    <p class="text-xs text-slate-300 mb-4 leading-relaxed">La estrella más brillante de todo el cielo nocturno. Destaca por sus destellos centelleantes azul-blancos.</p>
+                    <div class="space-y-1.5 text-xs font-mono text-slate-400 border-t border-slate-800/80 pt-3">
+                        <div class="flex justify-between"><span>Distancia:</span> <span class="text-slate-200">8.6 a.l.</span></div>
+                        <div class="flex justify-between"><span>Constelación:</span> <span class="text-space-accent">Can Mayor</span></div>
+                        <div class="flex justify-between"><span>Mag. Aparente:</span> <span class="text-amber-400 font-semibold">-1.46</span></div>
+                    </div>
+                </div>
+
+                <!-- Star Card 2: Betelgeuse -->
+                <div class="glass-card rounded-2xl p-5 relative group overflow-hidden">
+                    <div class="absolute top-0 right-0 w-24 h-24 bg-amber-600/10 rounded-full blur-xl group-hover:bg-amber-600/20 transition-all"></div>
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <span class="text-[10px] font-mono tracking-widest uppercase text-amber-400 font-semibold">Alfa Orionis</span>
+                            <h3 class="font-serif text-xl font-bold text-white">Betelgeuse</h3>
+                        </div>
+                        <span class="w-3 h-3 rounded-full bg-orange-400 shadow-[0_0_10px_#f97316]"></span>
+                    </div>
+                    <p class="text-xs text-slate-300 mb-4 leading-relaxed">Supergigante roja al final de su vida. Su característico color anaranjado es inconfundible en Orión.</p>
+                    <div class="space-y-1.5 text-xs font-mono text-slate-400 border-t border-slate-800/80 pt-3">
+                        <div class="flex justify-between"><span>Distancia:</span> <span class="text-slate-200">642.5 a.l.</span></div>
+                        <div class="flex justify-between"><span>Constelación:</span> <span class="text-space-accent">Orión</span></div>
+                        <div class="flex justify-between"><span>Mag. Aparente:</span> <span class="text-amber-400 font-semibold">0.50 (Variable)</span></div>
+                    </div>
+                </div>
+
+                <!-- Star Card 3: Vega -->
+                <div class="glass-card rounded-2xl p-5 relative group overflow-hidden">
+                    <div class="absolute top-0 right-0 w-24 h-24 bg-indigo-500/10 rounded-full blur-xl group-hover:bg-indigo-500/20 transition-all"></div>
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <span class="text-[10px] font-mono tracking-widest uppercase text-indigo-400 font-semibold">Alfa Lyrae</span>
+                            <h3 class="font-serif text-xl font-bold text-white">Vega</h3>
+                        </div>
+                        <span class="w-3 h-3 rounded-full bg-blue-100 shadow-[0_0_10px_#818cf8]"></span>
+                    </div>
+                    <p class="text-xs text-slate-300 mb-4 leading-relaxed">Referencia histórica de magnitud cero. Forma el famoso asterismo del 'Triángulo de Verano'.</p>
+                    <div class="space-y-1.5 text-xs font-mono text-slate-400 border-t border-slate-800/80 pt-3">
+                        <div class="flex justify-between"><span>Distancia:</span> <span class="text-slate-200">25 a.l.</span></div>
+                        <div class="flex justify-between"><span>Constelación:</span> <span class="text-space-accent">Lira</span></div>
+                        <div class="flex justify-between"><span>Mag. Aparente:</span> <span class="text-amber-400 font-semibold">0.03</span></div>
+                    </div>
+                </div>
+
+                <!-- Star Card 4: Polaris -->
+                <div class="glass-card rounded-2xl p-5 relative group overflow-hidden">
+                    <div class="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 rounded-full blur-xl group-hover:bg-emerald-500/20 transition-all"></div>
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <span class="text-[10px] font-mono tracking-widest uppercase text-emerald-400 font-semibold">Alfa Ursae Minoris</span>
+                            <h3 class="font-serif text-xl font-bold text-white">Polaris</h3>
+                        </div>
+                        <span class="w-3 h-3 rounded-full bg-yellow-100 shadow-[0_0_10px_#34d399]"></span>
+                    </div>
+                    <p class="text-xs text-slate-300 mb-4 leading-relaxed">La Estrella Polar indica casi con precisión el Norte geográfico en el hemisferio norte.</p>
+                    <div class="space-y-1.5 text-xs font-mono text-slate-400 border-t border-slate-800/80 pt-3">
+                        <div class="flex justify-between"><span>Distancia:</span> <span class="text-slate-200">433 a.l.</span></div>
+                        <div class="flex justify-between"><span>Constelación:</span> <span class="text-space-accent">Osa Menor</span></div>
+                        <div class="flex justify-between"><span>Mag. Aparente:</span> <span class="text-amber-400 font-semibold">1.97</span></div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- Observation Guides Section -->
+        <section id="guides" class="py-10 px-4 max-w-7xl mx-auto mb-12">
+            <div class="glass-panel rounded-3xl p-6 md:p-8 border border-slate-800 relative overflow-hidden">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
+                    <div>
+                        <span class="text-xs font-mono text-space-accent uppercase tracking-widest">Consejos Prácticos</span>
+                        <h2 class="font-serif text-2xl md:text-3xl font-bold text-white mt-1 mb-3">¿Cómo observar mejor las estrellas?</h2>
+                        <p class="text-slate-400 text-xs md:text-sm leading-relaxed mb-4">
+                            Observar el firmamento no requiere telescopios costosos. Sigue estas recomendaciones sencillas para mejorar drásticamente tu experiencia bajo las estrellas.
+                        </p>
+                        <a href="#planetarium" class="inline-flex items-center gap-2 text-xs font-semibold px-4 py-2.5 rounded-xl bg-space-accent text-space-900 hover:bg-sky-300 transition-colors">
+                            <i class="fa-solid fa-map-location-dot"></i> Ir al simulador estelar
+                        </a>
+                    </div>
+
+                    <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <!-- Tip 1 -->
+                        <div class="bg-space-900/60 p-4 rounded-xl border border-slate-800/80 flex items-start gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-space-purple/20 text-space-purple flex items-center justify-center shrink-0">
+                                <i class="fa-solid fa-[#f00] fa-eye-slash text-xs"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-sm text-slate-200">Adaptación a la Oscuridad</h4>
+                                <p class="text-xs text-slate-400 mt-1">Tus ojos tardan unos 20-30 minutos en adaptarse completamente a la penumbra. Evita mirar la pantalla de tu móvil sin filtro rojo.</p>
+                            </div>
+                        </div>
+
+                        <!-- Tip 2 -->
+                        <div class="bg-space-900/60 p-4 rounded-xl border border-slate-800/80 flex items-start gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-space-accent/20 text-space-accent flex items-center justify-center shrink-0">
+                                <i class="fa-solid fa-city text-xs"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-sm text-slate-200">Contaminación Lumínica</h4>
+                                <p class="text-xs text-slate-400 mt-1">Aléjate de las luces urbanas. La Escala de Bortle mide la oscuridad del cielo; busca cielos de nivel 1 a 4 para ver la Vía Láctea.</p>
+                            </div>
+                        </div>
+
+                        <!-- Tip 3 -->
+                        <div class="bg-space-900/60 p-4 rounded-xl border border-slate-800/80 flex items-start gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+                                <i class="fa-solid fa-binoculars text-xs"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-sm text-slate-200">Usa Prismáticos</h4>
+                                <p class="text-xs text-slate-400 mt-1">Unos binoculares 7x50 o 10x50 son perfectos para empezar. Revelan miles de estrellas invisibles a simple vista y cúmulos.</p>
+                            </div>
+                        </div>
+
+                        <!-- Tip 4 -->
+                        <div class="bg-space-900/60 p-4 rounded-xl border border-slate-800/80 flex items-start gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                                <i class="fa-solid fa-cloud-sun text-xs"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-sm text-slate-200">Revisa la Climatología</h4>
+                                <p class="text-xs text-slate-400 mt-1">El nivel de humedad, la nubosidad y el 'seeing' (turbulencia atmosférica) determinan la nitidez de la observación.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="glass-panel border-t border-slate-800/80 py-8 px-4 text-center text-xs text-slate-500">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-sparkles text-space-accent"></i>
+                <span class="font-serif font-semibold text-slate-300">FIRMAMENTO</span> &mdash; © <span id="yearSpan"></span> Explorador Cósmico
+            </div>
+            <p class="text-slate-400">Diseñado con elegancia para amantes de la astronomía y la observación nocturna.</p>
+            <div class="flex gap-4 text-slate-400 text-sm">
+                <a href="#" class="hover:text-space-accent transition-colors"><i class="fa-brands fa-github"></i></a>
+                <a href="#" class="hover:text-space-accent transition-colors"><i class="fa-solid fa-envelope"></i></a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        /* Interactive Star Map Canvas Engine & Astro Calculation Script */
+        
+        // Year span
+        document.getElementById('yearSpan').textContent = new Date().getFullYear();
+
+        // Canvas Setup
+        const canvas = document.getElementById('starCanvas');
+        const ctx = canvas.getContext('2d');
+        const tooltip = document.getElementById('starTooltip');
+
+        // State Variables
+        let state = {
+            rotation: 0, // Rotation in radians
+            zoom: 1.0,
+            showConstellations: true,
+            showNames: true,
+            showAtmosphere: true,
+            hemisphere: 'N',
+            isDragging: false,
+            lastMouseX: 0,
+            lastMouseY: 0,
+            hoveredStar: null
+        };
+
+        // Astronomical Dataset: Major Stars with catalog positions (Spherical RA/Dec simplified)
+        const STAR_CATALOG = [
+            { name: "Sirio", const: "Canis Major", ra: 101.28, dec: -16.71, mag: -1.46, dist: "8.6 a.l.", color: "#E0F2FE", type: "A1V (Blanca)" },
+            { name: "Canopo", const: "Carina", ra: 95.98, dec: -52.69, mag: -0.74, dist: "310 a.l.", color: "#FEE2E2", type: "F0II (Amarilla)" },
+            { name: "Arcturus", const: "Boötes", ra: 213.91, dec: 19.18, mag: -0.05, dist: "36.7 a.l.", color: "#FFEDD5", type: "K1.5III (Naranja)" },
+            { name: "Vega", const: "Lyra", ra: 279.23, dec: 38.78, mag: 0.03, dist: "25.0 a.l.", color: "#E0F2FE", type: "A0V (Azul)" },
+            { name: "Capella", const: "Auriga", ra: 79.17, dec: 45.99, mag: 0.08, dist: "42.9 a.l.", color: "#FEF08A", type: "G3III (Amarilla)" },
+            { name: "Rigel", const: "Orion", ra: 78.63, dec: -8.20, mag: 0.13, dist: "860 a.l.", color: "#BAE6FD", type: "B8Ia (Supergigante Azul)" },
+            { name: "Procyon", const: "Canis Minor", ra: 114.82, dec: 5.22, mag: 0.34, dist: "11.4 a.l.", color: "#FEF9C3", type: "F5IV-V" },
+            { name: "Betelgeuse", const: "Orion", ra: 88.79, dec: 7.40, mag: 0.50, dist: "642 a.l.", color: "#FFD8A8", type: "M1-M2Ia-ab (Roja)" },
+            { name: "Altair", const: "Aquila", ra: 297.69, dec: 8.87, mag: 0.77, dist: "16.7 a.l.", color: "#F8FAFC", type: "A7V" },
+            { name: "Aldebarán", const: "Taurus", ra: 68.98, dec: 16.51, mag: 0.85, dist: "65.3 a.l.", color: "#FFD8A8", type: "K5III" },
+            { name: "Antares", const: "Scorpius", ra: 247.35, dec: -26.43, mag: 0.96, dist: "550 a.l.", color: "#FECACA", type: "M1.5Iab" },
+            { name: "Spica", const: "Virgo", ra: 201.29, dec: -11.16, mag: 0.98, dist: "250 a.l.", color: "#BAE6FD", type: "B1III-IV" },
+            { name: "Pollux", const: "Gemini", ra: 116.32, dec: 28.02, mag: 1.14, dist: "33.7 a.l.", color: "#FEF08A", type: "K0III" },
+            { name: "Fomalhaut", const: "Piscis Austrinus", ra: 344.41, dec: -29.62, mag: 1.17, dist: "25.1 a.l.", color: "#E0F2FE", type: "A3V" },
+            { name: "Deneb", const: "Cygnus", ra: 310.35, dec: 45.28, mag: 1.25, dist: "2600 a.l.", color: "#E0F2FE", type: "A2Ia" },
+            { name: "Regulus", const: "Leo", ra: 152.09, dec: 11.96, mag: 1.36, dist: "79.3 a.l.", color: "#BAE6FD", type: "B8IVn" },
+            { name: "Polaris", const: "Ursa Minor", ra: 37.95, dec: 89.26, mag: 1.97, dist: "433 a.l.", color: "#FEF9C3", type: "F7Ib" },
+            { name: "Castor", const: "Gemini", ra: 113.64, dec: 31.88, mag: 1.58, dist: "51.6 a.l.", color: "#F8FAFC", type: "A1V" },
+            { name: "Bellatrix", const: "Orion", ra: 81.28, dec: 6.35, mag: 1.64, dist: "250 a.l.", color: "#BAE6FD", type: "B2III" },
+            { name: "Alnilam", const: "Orion", ra: 84.05, dec: -1.20, mag: 1.69, dist: "2000 a.l.", color: "#BAE6FD", type: "B0Ia" }
+        ];
+
+        // Generate procedural background stars
+        const BACKGROUND_STARS = [];
+        for (let i = 0; i < 450; i++) {
+            BACKGROUND_STARS.push({
+                x: (Math.random() - 0.5) * 2,
+                y: (Math.random() - 0.5) * 2,
+                z: Math.random(),
+                size: Math.random() * 1.4 + 0.3,
+                alpha: Math.random() * 0.7 + 0.3,
+                twinkleSpeed: Math.random() * 0.03 + 0.005
+            });
+        }
+
+        // Constellation Lines Map (Indexes or Names connecting pairs)
+        const CONSTELLATION_LINES = [
+            ["Betelgeuse", "Bellatrix"], ["Bellatrix", "Rigel"], ["Betelgeuse", "Alnilam"], ["Rigel", "Alnilam"], // Orion
+            ["Vega", "Deneb"], ["Deneb", "Altair"], ["Altair", "Vega"], // Summer Triangle
+            ["Pollux", "Castor"], // Gemini
+            ["Sirio", "Procyon"]  // Canis major to minor
+        ];
+
+        // Setup Date & Time
+        function initDateTimeInputs() {
+            const now = new Date();
+            const dateStr = now.toISOString().split('T')[0];
+            const timeStr = now.toTimeString().split(' ')[0].substring(0, 5);
+            
+            document.getElementById('dateInput').value = dateStr;
+            document.getElementById('timeInput').value = timeStr;
+            updateMoonPhase(now);
+        }
+
+        // Canvas Resizing
+        function resizeCanvas() {
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * window.devicePixelRatio || 1;
+            canvas.height = rect.height * window.devicePixelRatio || 1;
+            drawSky();
+        }
+
+        // Map celestial RA/Dec to Canvas 2D projection
+        function projectStar(star, width, height, centerX, centerY, radius) {
+            // Apply hemisphere offsets and rotation angle
+            let raRad = (star.ra * Math.PI / 180) + state.rotation;
+            let decRad = star.dec * Math.PI / 180;
+
+            if (state.hemisphere === 'S') {
+                decRad = -decRad;
+            }
+
+            // Stereographic-like polar projection
+            const r = radius * (Math.cos(decRad) / (1 + Math.sin(decRad) * 0.2)) * state.zoom;
+            const x = centerX + r * Math.cos(raRad);
+            const y = centerY + r * Math.sin(raRad);
+
+            return { x, y, visible: r < radius * 1.35 };
+        }
+
+        // Main Render Loop
+        function drawSky() {
+            if (!ctx) return;
+
+            const w = canvas.width;
+            const h = canvas.height;
+            const centerX = w / 2;
+            const centerY = h / 2;
+            const skyRadius = Math.min(w, h) * 0.42;
+
+            // Clear Background
+            ctx.clearRect(0, 0, w, h);
+
+            // Deep Space Gradient Background
+            const bgGradient = ctx.createRadialGradient(centerX, centerY, skyRadius * 0.1, centerX, centerY, skyRadius * 1.2);
+            bgGradient.addColorStop(0, '#0F172A');
+            bgGradient.addColorStop(0.6, '#0B1120');
+            bgGradient.addColorStop(1, '#030712');
+            ctx.fillStyle = bgGradient;
+            ctx.fillRect(0, 0, w, h);
+
+            // Atmosphere Glow Outer Ring
+            if (state.showAtmosphere) {
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, skyRadius * 1.02, 0, Math.PI * 2);
+                ctx.strokeStyle = 'rgba(56, 189, 248, 0.15)';
+                ctx.lineWidth = 12 * window.devicePixelRatio;
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, skyRadius, 0, Math.PI * 2);
+                ctx.strokeStyle = 'rgba(56, 189, 248, 0.3)';
+                ctx.lineWidth = 2 * window.devicePixelRatio;
+                ctx.stroke();
+            }
+
+            // Draw Background Twinkling Stars
+            const now = Date.now();
+            BACKGROUND_STARS.forEach((bgStar) => {
+                const sx = centerX + bgStar.x * skyRadius * 1.3 * state.zoom;
+                const sy = centerY + bgStar.y * skyRadius * 1.3 * state.zoom;
+
+                // Check boundary
+                const distSq = (sx - centerX) ** 2 + (sy - centerY) ** 2;
+                if (distSq < (skyRadius * 1.05) ** 2) {
+                    const twinkle = Math.sin(now * bgStar.twinkleSpeed) * 0.3 + 0.7;
+                    ctx.beginPath();
+                    ctx.arc(sx, sy, bgStar.size * window.devicePixelRatio, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(255, 255, 255, ${bgStar.alpha * twinkle})`;
+                    ctx.fill();
+                }
+            });
+
+            // Projection Star Coordinates Store
+            const projectedStars = new Map();
+
+            STAR_CATALOG.forEach((star) => {
+                const pos = projectStar(star, w, h, centerX, centerY, skyRadius);
+                projectedStars.set(star.name, pos);
+            });
+
+            // Draw Constellation Lines
+            if (state.showConstellations) {
+                ctx.strokeStyle = 'rgba(56, 189, 248, 0.25)';
+                ctx.lineWidth = 1.2 * window.devicePixelRatio;
+                ctx.setLineDash([4, 4]);
+
+                CONSTELLATION_LINES.forEach(([p1, p2]) => {
+                    const pos1 = projectedStars.get(p1);
+                    const pos2 = projectedStars.get(p2);
+
+                    if (pos1 && pos2 && pos1.visible && pos2.visible) {
+                        ctx.beginPath();
+                        ctx.moveTo(pos1.x, pos1.y);
+                        ctx.lineTo(pos2.x, pos2.y);
+                        ctx.stroke();
+                    }
+                });
+                ctx.setLineDash([]); // Reset dash
+            }
+
+            // Draw Catalog Stars
+            state.hoveredStar = null;
+            STAR_CATALOG.forEach((star) => {
+                const pos = projectedStars.get(star.name);
+                if (!pos || !pos.visible) return;
+
+                // Calculate size based on magnitude (smaller mag = brighter/larger)
+                const starRadius = Math.max(2, (3.5 - star.mag * 0.8)) * window.devicePixelRatio;
+
+                // Glow Effect for Bright Stars
+                if (star.mag < 1.0) {
+                    const glowGrad = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, starRadius * 4);
+                    glowGrad.addColorStop(0, star.color);
+                    glowGrad.addColorStop(1, 'rgba(0,0,0,0)');
+                    ctx.fillStyle = glowGrad;
+                    ctx.beginPath();
+                    ctx.arc(pos.x, pos.y, starRadius * 4, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // Core Star Point
+                ctx.beginPath();
+                ctx.arc(pos.x, pos.y, starRadius, 0, Math.PI * 2);
+                ctx.fillStyle = star.color;
+                ctx.shadowColor = star.color;
+                ctx.shadowBlur = 8;
+                ctx.fill();
+                ctx.shadowBlur = 0; // Reset blur
+
+                // Star Names
+                if (state.showNames) {
+                    ctx.fillStyle = 'rgba(226, 232, 240, 0.75)';
+                    ctx.font = `${10 * window.devicePixelRatio}px Inter, sans-serif`;
+                    ctx.fillText(star.name, pos.x + starRadius + 4, pos.y + 3);
+                }
+
+                // Check mouse hover distance
+                const mouseX = state.lastMouseX * window.devicePixelRatio;
+                const mouseY = state.lastMouseY * window.devicePixelRatio;
+                const distToMouse = Math.hypot(pos.x - mouseX, pos.y - mouseY);
+
+                if (distToMouse < starRadius + 12 * window.devicePixelRatio) {
+                    state.hoveredStar = { star, x: pos.x, y: pos.y };
+                }
+            });
+
+            // Highlight Hovered Star
+            if (state.hoveredStar) {
+                const { x, y, star } = state.hoveredStar;
+                ctx.beginPath();
+                ctx.arc(x, y, 10 * window.devicePixelRatio, 0, Math.PI * 2);
+                ctx.strokeStyle = '#38BDF8';
+                ctx.lineWidth = 2 * window.devicePixelRatio;
+                ctx.stroke();
+
+                showTooltip(star, state.lastMouseX, state.lastMouseY);
+            } else {
+                hideTooltip();
+            }
+
+            // Update UI Info Text
+            document.getElementById('skyCoords').textContent = `Rotación: ${(state.rotation * 180 / Math.PI % 360).toFixed(0)}° | Zoom: ${state.zoom.toFixed(1)}x`;
+        }
+
+        // Tooltip Functions
+        function showTooltip(star, screenX, screenY) {
+            tooltip.classList.remove('hidden');
+            tooltip.style.left = `${screenX + 15}px`;
+            tooltip.style.top = `${screenY + 15}px`;
+
+            document.getElementById('tooltipName').textContent = star.name;
+            document.getElementById('tooltipConst').textContent = star.const;
+            document.getElementById('tooltipMag').textContent = star.mag.toFixed(2);
+            document.getElementById('tooltipDist').textContent = star.dist;
+            document.getElementById('tooltipType').textContent = star.type;
+        }
+
+        function hideTooltip() {
+            tooltip.classList.add('hidden');
+        }
+
+        // Calculate Approx Moon Phase
+        function updateMoonPhase(date) {
+            // Simplified moon phase calculation
+            let year = date.getFullYear();
+            let month = date.getMonth() + 1;
+            const day = date.getDate();
+
+            let c = 0, e = 0, jd = 0, b = 0;
+            if (month < 3) {
+                year--;
+                month += 12;
+            }
+            month++;
+            c = 365.25 * year;
+            e = 30.6 * month;
+            jd = c + e + day - 694039.09; // julian day relative to epoch
+            jd /= 29.5305882; // divide by synodic month
+            b = parseInt(jd); // int(jd)
+            jd -= b; // fractional part
+            const age = Math.round(jd * 29.53);
+
+            let phaseName = "Luna Nueva";
+            let illum = Math.round((1 - Math.cos((age / 29.53) * 2 * Math.PI)) / 2 * 100);
+
+            if (age === 0 || age === 29) phaseName = "Luna Nueva";
+            else if (age > 0 && age < 7) phaseName = "Creciente Cóncava";
+            else if (age === 7) phaseName = "Cuarto Creciente";
+            else if (age > 7 && age < 14) phaseName = "Creciente Convexa";
+            else if (age === 14 || age === 15) phaseName = "Luna Llena";
+            else if (age > 15 && age < 22) phaseName = "Menguante Convexa";
+            else if (age === 22) phaseName = "Cuarto Menguante";
+            else if (age > 22) phaseName = "Menguante Cóncava";
+
+            document.getElementById('moonPhaseName').textContent = phaseName;
+            document.getElementById('moonAge').textContent = `Día ${age} del Ciclo`;
+            document.getElementById('moonIllum').textContent = `${illum}%`;
+            document.getElementById('nextNewMoon').textContent = `${Math.abs(29 - age)} días`;
+
+            // Adjust graphic shadow width
+            const shadowEl = document.getElementById('moonShadow');
+            if (shadowEl) {
+                shadowEl.style.width = `${100 - illum}%`;
+            }
+        }
+
+        // Event Listeners for Interaction
+        window.addEventListener('resize', resizeCanvas);
+
+        // Canvas Mouse Dragging & Interaction
+        canvas.addEventListener('mousedown', (e) => {
+            state.isDragging = true;
+            state.lastMouseX = e.clientX - canvas.getBoundingClientRect().left;
+            state.lastMouseY = e.clientY - canvas.getBoundingClientRect().top;
+        });
+
+        window.addEventListener('mouseup', () => {
+            state.isDragging = false;
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const currentX = e.clientX - rect.left;
+            const currentY = e.clientY - rect.top;
+
+            if (state.isDragging) {
+                const deltaX = currentX - state.lastMouseX;
+                state.rotation += deltaX * 0.005;
+                drawSky();
+            }
+
+            state.lastMouseX = currentX;
+            state.lastMouseY = currentY;
+            drawSky();
+        });
+
+        // Touch support for mobile devices
+        canvas.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+                state.isDragging = true;
+                const rect = canvas.getBoundingClientRect();
+                state.lastMouseX = e.touches[0].clientX - rect.left;
+                state.lastMouseY = e.touches[0].clientY - rect.top;
+            }
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            if (state.isDragging && e.touches.length === 1) {
+                const rect = canvas.getBoundingClientRect();
+                const currentX = e.touches[0].clientX - rect.left;
+                const deltaX = currentX - state.lastMouseX;
+                state.rotation += deltaX * 0.005;
+                state.lastMouseX = currentX;
+                drawSky();
+            }
+        });
+
+        canvas.addEventListener('touchend', () => {
+            state.isDragging = false;
+        });
+
+        // Controls Logic
+        document.getElementById('toggleConstellations').addEventListener('click', function() {
+            state.showConstellations = !state.showConstellations;
+            this.classList.toggle('bg-space-accent/20');
+            this.classList.toggle('border-space-accent');
+            this.classList.toggle('text-space-accent');
+            this.classList.toggle('bg-space-800');
+            this.classList.toggle('text-slate-400');
+            drawSky();
+        });
+
+        document.getElementById('toggleNames').addEventListener('click', function() {
+            state.showNames = !state.showNames;
+            this.classList.toggle('bg-space-accent/20');
+            this.classList.toggle('border-space-accent');
+            this.classList.toggle('text-space-accent');
+            this.classList.toggle('bg-space-800');
+            this.classList.toggle('text-slate-400');
+            drawSky();
+        });
+
+        document.getElementById('toggleAtmosphere').addEventListener('click', function() {
+            state.showAtmosphere = !state.showAtmosphere;
+            drawSky();
+        });
+
+        document.getElementById('hemisphereSelect').addEventListener('change', (e) => {
+            state.hemisphere = e.target.value;
+            drawSky();
+        });
+
+        document.getElementById('btnZoomIn').addEventListener('click', () => {
+            state.zoom = Math.min(state.zoom + 0.2, 2.5);
+            drawSky();
+        });
+
+        document.getElementById('btnZoomOut').addEventListener('click', () => {
+            state.zoom = Math.max(state.zoom - 0.2, 0.6);
+            drawSky();
+        });
+
+        document.getElementById('btnResetView').addEventListener('click', () => {
+            state.zoom = 1.0;
+            state.rotation = 0;
+            drawSky();
+        });
+
+        document.getElementById('btnRealtime').addEventListener('click', () => {
+            initDateTimeInputs();
+            state.rotation = 0;
+            drawSky();
+        });
+
+        document.getElementById('dateInput').addEventListener('change', (e) => {
+            const date = new Date(e.target.value);
+            updateMoonPhase(date);
+        });
+
+        // Continuous Subtle Auto-rotation loop
+        function animateSky() {
+            if (!state.isDragging) {
+                state.rotation += 0.0003; // Slow earth rotation preview
+                drawSky();
+            }
+            requestAnimationFrame(animateSky);
+        }
+
+        // Initialize App
+        window.onload = function() {
+            initDateTimeInputs();
+            resizeCanvas();
+            animateSky();
+        };
+    </script>
+</body>
+</html>
